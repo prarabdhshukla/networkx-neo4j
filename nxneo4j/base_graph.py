@@ -29,6 +29,7 @@ class NodeView:
                 self.graph.identifier_property
             )
             key = self.graph.identifier_property
+            # print(session.run(query, {"value": index}).values())
             n = session.run(query, {"value": index}).single()["node"]
             data = {k: n[k] for k in n.keys() if k!=key}
             return data
@@ -102,6 +103,8 @@ class EdgeView:
             else:
                 for u, v, d in edges:
                     yield (u, v, d.get(data, default))
+    
+
 
 
 class BaseGraph:
@@ -270,6 +273,40 @@ class BaseGraph:
     RETURN COUNT(*) AS deletedNodes;
     """
 
+    def has_edge(self, u_value, v_value):
+
+        has_edge_query="""
+        MATCH (node1)-[r]->(node2)
+        WHERE ID(node1)=$node1_id AND ID(node2)=$node2_id
+        RETURN r
+        """
+        with self.driver.session() as session:
+            result=session.run(has_edge_query,node1_id=u_value, node2_id=v_value)
+
+            if result.single():
+                return True
+            else:
+                return False
+        # given_edge=(u_value,v_value)
+        # for edge in self.edges:
+        #     if edge==given_edge:
+        #         return True
+        #     else:
+        #         return False
+    
+    def get_edge_attributes(self,u_value, v_value):
+
+        get_attr_query="""
+        MATCH (node1)-[r]->(node2)
+        WHERE ID(node1)=$node1_id AND ID(node2)=$node2_id
+        RETURN r
+        """
+        with self.driver.session() as session:
+            result=session.run(get_attr_query,node1_id=u_value, node2_id=v_value)
+            edge=result.single()
+            return edge
+        
+    
     def remove_node(self, n):
         with self.driver.session() as session:
             query = self.remove_node_query % (self.node_label, self.identifier_property)
@@ -349,10 +386,10 @@ class BaseGraph:
                 session.run(query)
             query = self._clear_graph_nodes_query % (self.node_label)
             session.run(query)
-    def number_of_nodes(self):
-        with self.driver.session() as session:
-            query = self.number_of_nodes_query % self.node_label
-            return session.run(query).peek()["numberOfNodes"]
+    # def number_of_nodes(self):
+    #     with self.driver.session() as session:
+    #         query = self.number_of_nodes_query % self.node_label
+    #         return session.run(query).peek()["numberOfNodes"]
 
 
     def delete_all(self):
