@@ -306,7 +306,16 @@ class BaseGraph:
             edge=result.single()
             return edge
         
-    
+    def update_edge_attributes(self,u,v,attrs):
+        update_attr_query="""
+        MATCH (node1)-[r]->(node2)
+        WHERE ID(node1)=$node1_id AND ID(node2)=$node2_id
+        SET r += $new_attr
+        """
+
+        with self.driver.session() as session:
+            session.run(update_attr_query,node1_id=u, node2_id=v, new_attributes=attrs)
+
     def remove_node(self, n):
         with self.driver.session() as session:
             query = self.remove_node_query % (self.node_label, self.identifier_property)
